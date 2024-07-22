@@ -1,0 +1,10 @@
+Shivering,Sneezing,headache,dizziness,high fever,fatigue,Disease
+1,1,0,0,0,0,Allergy
+1,1,0,0,1,0,Cold 
+0,0,1,1,0,1,Migraine
+0,0,0,1,0,1,Asthma
+0,0,0,0,0,1,Diabetes
+0,0,1,1,0,0,Hypertension
+0,0,0,1,0,0,Cervical spondylosis
+1,0,1,0,1,1,Malaria
+0,0,1,0,1,1,Chicken pox
