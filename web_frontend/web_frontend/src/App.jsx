@@ -13,6 +13,7 @@ function App() {
   const [predictedDisease, setPredictedDisease] = useState(""); // State for predicted disease
 
   const inputRef = useRef(null);
+  const currentUrl = new URL(window.location.href);
 
   useEffect(() => {
     const fetchSymptoms = () => {
@@ -21,8 +22,10 @@ function App() {
         setSuggestions([]);
         return;
       }
+      console.log();
+      const apiUrl = `http://${currentUrl.hostname}:8080/symptoms`;
 
-      fetch(`http://localhost:8080/symptoms`)
+      fetch(apiUrl)
         .then((res) => res.json())
         .then((data) => {
           const filteredSymptoms = data.filter((symptom) =>
