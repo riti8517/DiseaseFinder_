@@ -18,6 +18,14 @@ from pydantic import BaseModel
 app = FastAPI()
 pickle_in = open("diseaseFinder_dt_aug_2_2024.pkl","rb")
 classifier=pickle.load(pickle_in)
+print("Pickle: ")
+print(pickle.format_version)
+print("numpy: ")
+print(np.__version__)
+print("Uvicorn: ")
+print(uvicorn.__version__)
+print("pandas: ")
+print(pd.__version__)
 
 # 3. Index route, opens automatically on http://127.0.0.1:8000
 @app.get('/')
