@@ -6,6 +6,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.riti.web_backend.response.ResponseHandler;
 import com.riti.web_backend.service.DiseaseService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,10 +22,12 @@ import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.LogManager;
 
 @RestController
 @RequestMapping("/")
 public class SearchController {
+    Logger logger = LoggerFactory.getLogger(SearchController.class);
 
     @Autowired
     DiseaseService service;
@@ -58,8 +62,16 @@ public class SearchController {
                 .build();
 
         HttpClient httpClient = HttpClient.newHttpClient();
-        HttpResponse<String> getResponse = httpClient.send(getRequest, HttpResponse.BodyHandlers.ofString());
-        String responseBody = getResponse.body();
+        logger.info("Calling model serving with symptoms: "+stringSymptoms);
+        HttpResponse<String> response = httpClient.send(getRequest, HttpResponse.BodyHandlers.ofString());
+        if(response.statusCode() != HttpStatus.OK.value()) {
+            logger.error("not found");
+        }
+
+        String responseBody = response.body();
+        logger.info("response body: "+responseBody);
+        logger.info(String.valueOf("response code: "+response.statusCode()));
+
         if (responseBody.startsWith("{")) {
             JsonElement jsonElement = JsonParser.parseString(responseBody);
             JsonArray predictionArray = jsonElement.getAsJsonObject().getAsJsonArray("prediction");
