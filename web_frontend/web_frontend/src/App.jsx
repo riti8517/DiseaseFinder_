@@ -23,7 +23,7 @@ function App() {
         return;
       }
       console.log();
-      const apiUrl = `http://${currentUrl.hostname}:8080/symptoms`;
+      const apiUrl = `https://${currentUrl.hostname}:8080/symptoms`;
 
       fetch(apiUrl)
         .then((res) => res.json())
@@ -39,7 +39,7 @@ function App() {
     };
 
     fetchSymptoms();
-  }, [searchTerm, selectedSymptoms]);
+  }, [searchTerm]);
 
   const handleSelectSymptom = (symptom) => {
     setSelectedSymptoms([...selectedSymptoms, symptom]);
@@ -88,7 +88,7 @@ function App() {
 
   const handleSearchDisease = () => {
     const symptomNames = selectedSymptoms.map((symptom) => symptom.symptom).join(",");
-    const predictUrl = `http://${currentUrl.hostname}:8080/predictDisease?symptoms=${encodeURIComponent(symptomNames)}`;
+    const predictUrl = `https://${currentUrl.hostname}:8080/predictDisease?symptoms=${encodeURIComponent(symptomNames)}`;
     
     fetch(predictUrl)
       .then((res) => res.json())
