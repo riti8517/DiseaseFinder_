@@ -23,7 +23,7 @@ function App() {
         return;
       }
       console.log();
-      const apiUrl = `http://${currentUrl.hostname}:8000/symptoms`;
+      const apiUrl = `http://${currentUrl.hostname}:8080/symptoms`;
 
       fetch(apiUrl)
         .then((res) => res.json())
