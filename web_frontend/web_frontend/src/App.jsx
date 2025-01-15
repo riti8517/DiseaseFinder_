@@ -88,7 +88,7 @@ function App() {
 
   const handleSearchDisease = () => {
     const symptomNames = selectedSymptoms.map((symptom) => symptom.symptom).join(",");
-    const predictUrl = `http://${currentUrl.hostname}:8000/predictDisease?symptoms=${encodeURIComponent(symptomNames)}`;
+    const predictUrl = `http://${currentUrl.hostname}:8080/predictDisease?symptoms=${encodeURIComponent(symptomNames)}`;
     
     fetch(predictUrl)
       .then((res) => res.json())
