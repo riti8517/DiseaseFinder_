@@ -15,8 +15,10 @@ import pandas as pd
 from pydantic import BaseModel
 
 # 2. Create the app object
+neural_network = "diseaseFinder_neural_network_2025.pkl"
+random_forest = "diseaseFinder_dt_aug_2_2024.pkl"
 app = FastAPI()
-pickle_in = open("diseaseFinder_dt_aug_2_2024.pkl","rb")
+pickle_in = open(neural_network,"rb")
 classifier=pickle.load(pickle_in)
 print("Pickle: ")
 print(pickle.format_version)
@@ -49,36 +51,27 @@ def predict_disease(data: str):
     symptomsArr = data.split(',')
     print(symptomsArr)
     intArr = [int(x) for x in symptomsArr]
+   
+   # Ensure correct column names as per the training dataset
+    column_names = [f"Symptom_{i+1}" for i in range(len(intArr))]  # Adjust indexing to match training data
+   
+   # Create a DataFrame with the correct feature names
+    df = pd.DataFrame([intArr], columns=column_names)
+   
     print("hello world2")
-    
-
-   # print(classifier.predict([[variance,skewness,curtosis,entropy]]))
-    prediction = classifier.predict([[intArr[0], intArr[1], intArr[2],
-                                      intArr[3], intArr[4], intArr[5], intArr[6],
-                                      intArr[7], intArr[8], intArr[9], intArr[10], intArr[11], intArr[12], intArr[13],
-                                      intArr[14], intArr[15], intArr[16], intArr[17], intArr[18], intArr[19], intArr[20]
-                                      , intArr[21], intArr[22], intArr[23], intArr[24], intArr[25], intArr[26], intArr[27]
-                                      , intArr[28], intArr[29], intArr[30], intArr[31], intArr[32], intArr[33], intArr[34]
-                                      , intArr[35], intArr[36], intArr[37], intArr[38], intArr[39], intArr[40], 
-                                      intArr[41], intArr[42], intArr[43],
-                                      intArr[44], intArr[45], intArr[46], intArr[47],
-                                      intArr[48], intArr[49], intArr[50], intArr[51], intArr[52], intArr[53], intArr[54],
-                                      intArr[55], intArr[56], intArr[57], intArr[58], intArr[59], intArr[60], intArr[61]
-                                      , intArr[62], intArr[63], intArr[64], intArr[65], intArr[66], intArr[67]
-                                      , intArr[68], intArr[69], intArr[70], intArr[71], intArr[72], intArr[73], intArr[74]
-                                      , intArr[75], intArr[76], intArr[77], intArr[78], intArr[79], intArr[80],
-                                      intArr[81], intArr[82], intArr[83],
-                                      intArr[84], intArr[85], intArr[86], intArr[87],
-                                      intArr[88], intArr[89], intArr[90], intArr[91], intArr[92], intArr[93], intArr[94],
-                                      intArr[95], intArr[96], intArr[97], intArr[98], intArr[99], intArr[100], intArr[101]
-                                      , intArr[102], intArr[103], intArr[104], intArr[105], intArr[106], intArr[107]
-                                      , intArr[108], intArr[109], intArr[110], intArr[111], intArr[112], intArr[113], intArr[114]
-                                      , intArr[115], intArr[116], intArr[117], intArr[118], intArr[119], intArr[120],
-                                      intArr[121], intArr[122], intArr[123], intArr[124], intArr[125]
-                                      , intArr[126], intArr[127], intArr[128], intArr[129], intArr[130]]])
+   
+   # Make prediction using the classifier
+    prediction = classifier.predict(df)
+    print(prediction)
+    print(df)
+    prediction_array = np.array(prediction)
+    predicted_class = int(np.argmax(prediction_array))
+    mypredicted_list = [predicted_class]
+    print("Raw probabilities:", prediction_array)
+    print("Predicted class:", predicted_class)
 
     return {
-        'prediction': prediction.tolist()
+        'prediction': mypredicted_list
     }
 
 # 5. Run the API with uvicorn
