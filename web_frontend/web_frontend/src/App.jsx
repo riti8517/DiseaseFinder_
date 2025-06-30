@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./App.css";
 import Pill from "./components/Pill";
+import Chatbot from "./Chatbot";          // ← NEW import
 import docImage from "./assets/doc.png";
 
-function App() {
+export default function App() {
   const [searchTerm, setSearchTerm] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [selectedSymptoms, setSelectedSymptoms] = useState([]);
@@ -14,141 +15,129 @@ function App() {
   const inputRef = useRef(null);
   const currentUrl = new URL(window.location.href);
 
-  // Fetch symptoms based on search term
+  /* ----------------- fetch suggestions ----------------- */
   useEffect(() => {
-    const fetchSymptoms = () => {
-      setActiveSuggestion(0);
-      if (searchTerm.trim() === "") {
-        setSuggestions([]);
-        return;
-      }
-      const apiUrl = `http://${currentUrl.hostname}:8080/symptoms`;
+    if (!searchTerm.trim()) {
+      setSuggestions([]);
+      return;
+    }
 
-      fetch(apiUrl)
-        .then((res) => res.json())
-        .then((data) => {
-          const filteredSymptoms = data.filter((symptom) =>
-            symptom.symptom.toLowerCase().includes(searchTerm.toLowerCase())
-          );
-          setSuggestions(filteredSymptoms);
-        })
-        .catch((err) => {
-          console.error(err);
-        });
-    };
+    const apiUrl = `http://${currentUrl.hostname}:8080/symptoms`;
 
-    fetchSymptoms();
+    fetch(apiUrl)
+      .then((res) => res.json())
+      .then((data) => {
+        const filtered = data.filter((s) =>
+          s.symptom.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        setActiveSuggestion(0);
+        setSuggestions(filtered);
+      })
+      .catch(console.error);
   }, [searchTerm]);
 
-  // Select and remove symptoms
+  /* ------------------- chip helpers -------------------- */
   const handleSelectSymptom = (symptom) => {
-    setSelectedSymptoms([...selectedSymptoms, symptom]);
-    setSelectedSymptomSet(new Set([...selectedSymptomSet, symptom.symptom]));
+    setSelectedSymptoms((prev) => [...prev, symptom]);
+    setSelectedSymptomSet((prev) => new Set([...prev, symptom.symptom]));
     setSearchTerm("");
     setSuggestions([]);
     inputRef.current.focus();
   };
 
   const handleRemoveSymptom = (symptom) => {
-    const updatedSymptoms = selectedSymptoms.filter(
-      (selectedSymptom) => selectedSymptom.id !== symptom.id
+    setSelectedSymptoms((prev) =>
+      prev.filter((s) => s.id !== symptom.id)
     );
-    setSelectedSymptoms(updatedSymptoms);
-    setSelectedSymptomSet(new Set(updatedSymptoms.map((s) => s.symptom)));
+    setSelectedSymptomSet((prev) => {
+      const copy = new Set(prev);
+      copy.delete(symptom.symptom);
+      return copy;
+    });
   };
 
+  /* ------------------- keyboard UX --------------------- */
   const handleKeyDown = (e) => {
-    if (e.key === "Backspace" && e.target.value === "" && selectedSymptoms.length > 0) {
-      const lastSymptom = selectedSymptoms[selectedSymptoms.length - 1];
-      handleRemoveSymptom(lastSymptom);
-      setSuggestions([]);
-    } else if (e.key === "ArrowDown" && suggestions.length > 0) {
+    if (e.key === "Backspace" && !e.target.value && selectedSymptoms.length) {
+      handleRemoveSymptom(selectedSymptoms[selectedSymptoms.length - 1]);
+    } else if (e.key === "ArrowDown" && suggestions.length) {
       e.preventDefault();
-      setActiveSuggestion((prevIndex) =>
-        prevIndex < suggestions.length - 1 ? prevIndex + 1 : prevIndex
-      );
-    } else if (e.key === "ArrowUp" && suggestions.length > 0) {
+      setActiveSuggestion((i) => Math.min(i + 1, suggestions.length - 1));
+    } else if (e.key === "ArrowUp" && suggestions.length) {
       e.preventDefault();
-      setActiveSuggestion((prevIndex) => (prevIndex > 0 ? prevIndex - 1 : 0));
-    } else if (
-      e.key === "Enter" &&
-      activeSuggestion >= 0 &&
-      activeSuggestion < suggestions.length
-    ) {
+      setActiveSuggestion((i) => Math.max(i - 1, 0));
+    } else if (e.key === "Enter" && suggestions.length) {
+      e.preventDefault();
       handleSelectSymptom(suggestions[activeSuggestion]);
     }
   };
 
-  // Search for disease based on symptoms
+  /* ---------------- disease prediction ----------------- */
   const handleSearchDisease = () => {
-    const symptomNames = selectedSymptoms.map((symptom) => symptom.symptom).join(",");
-    const predictUrl = `http://${currentUrl.hostname}:8080/predictDisease?symptoms=${encodeURIComponent(symptomNames)}`;
-    
-    fetch(predictUrl)
+    const symptomNames = selectedSymptoms.map((s) => s.symptom).join(",");
+    const url = `http://${currentUrl.hostname}:8080/predictDisease?symptoms=${encodeURIComponent(
+      symptomNames
+    )}`;
+
+    fetch(url)
       .then((res) => res.json())
-      .then((data) => {
-        setPredictedDisease(data.data);
-        
-        document.getElementById("pd").innerHTML = "Predicted Disease: " +data.data;
-        
-      })
-      .catch((err) => {
-        console.error(err);
-      });
+      .then((data) => setPredictedDisease(data.data))
+      .catch(console.error);
   };
 
-
+  /* ---------------------- UI --------------------------- */
   return (
-    <div className="app-container">
-      <header>
-        <img src={docImage} alt="Disease Finder" className="app-image" />
-        <h1>Disease Finder</h1>
-      </header>
+    <>
+      {/* Disease‑Finder main card */}
+      <div className="app-container">
+        <header>
+          <img src={docImage} alt="Disease Finder" className="app-image" />
+          <h1>Disease Finder</h1>
+        </header>
 
-      <main>
-        {/* Symptom Search Section */}
-        <div className="symptom-search-container">
-          <div className="symptom-search-input">
-            {selectedSymptoms.map((symptom) => (
-              <Pill
-                key={symptom.id}
-                text={symptom.symptom}
-                onClick={() => handleRemoveSymptom(symptom)}
+        <main>
+          {/* symptom search */}
+          <div className="symptom-search-container">
+            <div className="symptom-search-input">
+              {selectedSymptoms.map((s) => (
+                <Pill
+                  key={s.id}
+                  text={s.symptom}
+                  onClick={() => handleRemoveSymptom(s)}
+                />
+              ))}
+
+              <input
+                ref={inputRef}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search for symptoms…"
+                onKeyDown={handleKeyDown}
               />
-            ))}
 
-            <input
-              ref={inputRef}
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search for symptoms..."
-              onKeyDown={handleKeyDown}
-            />
-            <button type="button" onClick={handleSearchDisease}>
-              Search Disease
-            </button>
+              <button type="button" onClick={handleSearchDisease}>
+                Search Disease
+              </button>
 
-            {searchTerm && (
-              <ul className="suggestions-list">
-                {suggestions.map((symptom, index) => {
-                  return !selectedSymptomSet.has(symptom.symptom) ? (
-                    <li
-                      className={index === activeSuggestion ? "active" : ""}
-                      key={symptom.id}
-                      onClick={() => handleSelectSymptom(symptom)}
-                    >
-                      {symptom.symptom}
-                    </li>
-                  ) : null;
-                })}
-              </ul>
-            )}
+              {searchTerm && (
+                <ul className="suggestions-list">
+                  {suggestions.map((symptom, idx) =>
+                    !selectedSymptomSet.has(symptom.symptom) ? (
+                      <li
+                        key={symptom.id}
+                        className={idx === activeSuggestion ? "active" : ""}
+                        onClick={() => handleSelectSymptom(symptom)}
+                      >
+                        {symptom.symptom}
+                      </li>
+                    ) : null
+                  )}
+                </ul>
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* Predicted Disease Section */}
-        <div id="predicted-disease">
+          {/* prediction card */}
           {predictedDisease && (
             <div className="predicted-disease-card">
               <h2>Prediction Result</h2>
@@ -163,14 +152,15 @@ function App() {
               </div>
             </div>
           )}
-        </div>
-      </main>
+        </main>
 
-      <footer>
-        <p>&copy; 2025 Disease Finder. All rights reserved.</p>
-      </footer>
-    </div>
+        <footer>
+          <p>&copy; 2025 Disease Finder. All rights reserved.</p>
+        </footer>
+      </div>
+
+      {/* floating chatbot (outside main card) */}
+      <Chatbot />
+    </>
   );
 }
-
-export default App;

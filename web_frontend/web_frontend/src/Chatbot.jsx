@@ -1,8 +1,7 @@
-// src/components/ChatbotSimple.jsx
 import React, { useState, useRef, useEffect } from "react";
-import "./ChatbotSimple.css";
+import "./Chatbot.css";
 
-export default function ChatbotSimple() {
+export default function Chatbot() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
     { from: "bot", text: "Hi! How can I help?" },
@@ -10,10 +9,9 @@ export default function ChatbotSimple() {
   const [text, setText] = useState("");
   const endRef = useRef(null);
 
-  // keep view pinned to latest message
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, open]);
+  }, [messages]);
 
   const send = async () => {
     if (!text.trim()) return;
@@ -23,28 +21,31 @@ export default function ChatbotSimple() {
     setText("");
 
     try {
-      const res = await fetch(`http://${window.location.hostname}:11434/api/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "llama3",
-          messages: [
-            { role: "system", content: "You are a helpful medical AI assistant." },
-            ...messages.map((m) => ({
-              role: m.from === "user" ? "user" : "assistant",
-              content: m.text,
-            })),
-            { role: "user", content: userMsg.text },
-          ],
-          stream: false,
-        }),
-      });
+      const res = await fetch(
+        `http://${window.location.hostname}:11434/api/chat`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "llama3",
+            messages: [
+              { role: "system", content: "You are a helpful medical AI assistant." },
+              ...messages.map((m) => ({
+                role: m.from === "user" ? "user" : "assistant",
+                content: m.text,
+              })),
+              { role: "user", content: userMsg.text },
+            ],
+            stream: false,
+          }),
+        }
+      );
 
       const data = await res.json();
-      setMessages((m) => [...m, { from: "bot", text: data.message.content.trim() }]);
+      setMessages((m) => [...m, { from: "bot", text: data.message.content }]);
     } catch (err) {
       console.error(err);
-      setMessages((m) => [...m, { from: "bot", text: "⚠️ Can’t reach server." }]);
+   
     }
   };
 
@@ -57,12 +58,14 @@ export default function ChatbotSimple() {
 
   return (
     <>
-      {/* Floating toggle button */}
-      <button className="chat-toggle" onClick={() => setOpen((o) => !o)}>
-        💬
-      </button>
+      {}
+      {!open && (
+        <button className="chat-toggle" onClick={() => setOpen(true)}>
+          💬
+        </button>
+      )}
 
-      {/* Chat window */}
+      {}
       {open && (
         <div className="chat-box">
           <div className="chat-header">
