@@ -13,6 +13,7 @@ export default function Chatbot() {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  /* 🔄  --------- NEW send() that calls FastAPI --------- */
   const send = async () => {
     if (!text.trim()) return;
 
@@ -22,30 +23,29 @@ export default function Chatbot() {
 
     try {
       const res = await fetch(
-        `http://${window.location.hostname}:11434/api/chat`,
+        `http://${window.location.hostname}:8000/chat`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            model: "llama3",
-            messages: [
-              { role: "system", content: "You are a helpful medical AI assistant." },
-              ...messages.map((m) => ({
-                role: m.from === "user" ? "user" : "assistant",
-                content: m.text,
-              })),
-              { role: "user", content: userMsg.text },
-            ],
-            stream: false,
+            history: messages.map((m) => ({
+              role: m.from === "user" ? "user" : "assistant",
+              content: m.text,
+            })),
+            question: userMsg.text,
           }),
         }
       );
 
+      if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
-      setMessages((m) => [...m, { from: "bot", text: data.message.content }]);
+      setMessages((m) => [...m, { from: "bot", text: data.answer }]);
     } catch (err) {
       console.error(err);
-   
+      setMessages((m) => [
+        ...m,
+        { from: "bot", text: "Sorry, something went wrong." },
+      ]);
     }
   };
 
@@ -58,14 +58,14 @@ export default function Chatbot() {
 
   return (
     <>
-      {}
+      {/* floating toggle */}
       {!open && (
         <button className="chat-toggle" onClick={() => setOpen(true)}>
           💬
         </button>
       )}
 
-      {}
+      {/* chat window */}
       {open && (
         <div className="chat-box">
           <div className="chat-header">
