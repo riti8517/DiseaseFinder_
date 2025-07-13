@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./Chatbot.css";
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
 export default function Chatbot() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
@@ -13,7 +15,6 @@ export default function Chatbot() {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  /* 🔄  --------- NEW send() that calls FastAPI --------- */
   const send = async () => {
     if (!text.trim()) return;
 
@@ -22,22 +23,18 @@ export default function Chatbot() {
     setText("");
 
     try {
-      const res = await fetch(
-        `http://${window.location.hostname}:8000/chat`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            history: messages.map((m) => ({
-              role: m.from === "user" ? "user" : "assistant",
-              content: m.text,
-            })),
-            question: userMsg.text,
-          }),
-        }
-      );
+      const res = await fetch(`${BACKEND_URL}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          history: messages.map((m) => ({
+            role: m.from === "user" ? "user" : "assistant",
+            content: m.text,
+          })),
+          question: userMsg.text,
+        }),
+      });
 
-      if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       setMessages((m) => [...m, { from: "bot", text: data.answer }]);
     } catch (err) {
@@ -58,14 +55,12 @@ export default function Chatbot() {
 
   return (
     <>
-      {/* floating toggle */}
       {!open && (
         <button className="chat-toggle" onClick={() => setOpen(true)}>
           💬
         </button>
       )}
 
-      {/* chat window */}
       {open && (
         <div className="chat-box">
           <div className="chat-header">
