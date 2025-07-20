@@ -6,7 +6,7 @@
   height: 56px;
   border-radius: 50%;
   border: none;
-  background: #d298d3;
+  background: #c495c5;
   color: #e5a4db;
   font-size: 24px;
   cursor: pointer;
@@ -30,7 +30,7 @@
 
 .chat-header {
   padding: 8px 12px;
-  background: #ef95ea;
+  background: #ef9ceb;
   color: #fff;
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
