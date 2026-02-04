@@ -9,6 +9,7 @@ export default function Chatbot() {
     { from: "bot", text: "Hi! How can I help?" },
   ]);
   const [text, setText] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const endRef = useRef(null);
 
   useEffect(() => {
@@ -16,11 +17,12 @@ export default function Chatbot() {
   }, [messages]);
 
   const send = async () => {
-    if (!text.trim()) return;
+    if (!text.trim() || isLoading) return;
 
     const userMsg = { from: "user", text };
     setMessages((m) => [...m, userMsg]);
     setText("");
+    setIsLoading(true);
 
     try {
       const res = await fetch(`${BACKEND_URL}/chat`, {
@@ -43,6 +45,8 @@ export default function Chatbot() {
         ...m,
         { from: "bot", text: "Sorry, something went wrong." },
       ]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -76,6 +80,13 @@ export default function Chatbot() {
                 {m.text}
               </div>
             ))}
+            {isLoading && (
+              <div className="msg bot typing">
+                <span className="typing-dot"></span>
+                <span className="typing-dot"></span>
+                <span className="typing-dot"></span>
+              </div>
+            )}
             <div ref={endRef} />
           </div>
 
@@ -85,8 +96,11 @@ export default function Chatbot() {
               placeholder="Type and hit Enter…"
               onChange={(e) => setText(e.target.value)}
               onKeyDown={handleKey}
+              disabled={isLoading}
             />
-            <button onClick={send}>Send</button>
+            <button onClick={send} disabled={isLoading}>
+              {isLoading ? "..." : "Send"}
+            </button>
           </div>
         </div>
       )}
