@@ -1,27 +1,29 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import "./Chatbot.css";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+const BACKEND_URL = "";
 
-export default function Chatbot() {
+export default function Chatbot({ triggerMessage, onTriggerHandled }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { from: "bot", text: "Hi! How can I help?" },
+    { from: "bot", text: "Hi! I'm your AI medical assistant. How can I help you today?" },
   ]);
   const [text, setText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const endRef = useRef(null);
+  const messagesRef = useRef(messages);
+
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const send = async () => {
-    if (!text.trim() || isLoading) return;
+  const sendMessage = async (msgText) => {
+    if (!msgText.trim() || isLoading) return;
 
-    const userMsg = { from: "user", text };
+    const userMsg = { from: "user", text: msgText };
     setMessages((m) => [...m, userMsg]);
-    setText("");
     setIsLoading(true);
 
     try {
@@ -29,32 +31,39 @@ export default function Chatbot() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          history: messages.map((m) => ({
+          history: messagesRef.current.map((m) => ({
             role: m.from === "user" ? "user" : "assistant",
             content: m.text,
           })),
-          question: userMsg.text,
+          question: msgText,
         }),
       });
-
       const data = await res.json();
       setMessages((m) => [...m, { from: "bot", text: data.answer }]);
     } catch (err) {
       console.error(err);
-      setMessages((m) => [
-        ...m,
-        { from: "bot", text: "Sorry, something went wrong." },
-      ]);
+      setMessages((m) => [...m, { from: "bot", text: "Sorry, something went wrong." }]);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Handle external trigger (e.g. "Discuss with AI" button)
+  useEffect(() => {
+    if (!triggerMessage) return;
+    setOpen(true);
+    sendMessage(triggerMessage);
+    onTriggerHandled?.();
+  }, [triggerMessage]);
+
+  const send = () => {
+    if (!text.trim() || isLoading) return;
+    sendMessage(text);
+    setText("");
+  };
+
   const handleKey = (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      send();
-    }
+    if (e.key === "Enter") { e.preventDefault(); send(); }
   };
 
   return (

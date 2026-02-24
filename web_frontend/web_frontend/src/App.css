@@ -14,6 +14,7 @@ body {
   border-radius: 16px;
   padding: 40px 32px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
 }
 
 /* ---- Header ---- */
@@ -50,6 +51,7 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 16px;
+  width: 100%;
 }
 
 .search-box {
@@ -66,14 +68,14 @@ body {
 
 .search-input {
   width: 100%;
-  padding: 14px 18px;
+  padding: 8px 18px;
   border: 2px solid #e2e8f0;
   border-radius: 12px;
   font-size: 1rem;
   color: #2d3748;
   background: #f7fafc;
   transition: border-color 0.2s, box-shadow 0.2s;
-  text-align: left;
+  text-align: center;
   height: auto;
   max-width: none;
 }
@@ -230,6 +232,210 @@ body {
     transform: translateY(0);
   }
 }
+
+/* ---- How It Works ---- */
+.how-it-works {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: #718096;
+}
+
+.step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.step-arrow {
+  color: #cbd5e0;
+  font-size: 1rem;
+}
+
+/* ---- Emergency Banner ---- */
+.emergency-banner {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: #fff5f5;
+  border: 2px solid #fc8181;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+  animation: pulse-border 1.5s ease-in-out infinite;
+}
+
+.emergency-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.emergency-banner strong {
+  display: block;
+  color: #c53030;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+
+.emergency-banner p {
+  color: #742a2a;
+  font-size: 0.83rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+@keyframes pulse-border {
+  0%, 100% { border-color: #fc8181; }
+  50% { border-color: #e53e3e; }
+}
+
+/* ---- Quick Symptom Chips ---- */
+.quick-symptoms-section {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.quick-label {
+  font-size: 0.8rem;
+  color: #718096;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.quick-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.quick-chip {
+  padding: 6px 14px;
+  border: 1.5px solid #cbd5e0;
+  border-radius: 20px;
+  background: transparent;
+  color: #4a5568;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.quick-chip:hover:not(:disabled) {
+  border-color: #667eea;
+  color: #667eea;
+  background: #ebf4ff;
+}
+
+.quick-chip.selected,
+.quick-chip:disabled {
+  background: #667eea;
+  border-color: #667eea;
+  color: #fff;
+  opacity: 0.7;
+  cursor: default;
+}
+
+/* ---- Search Box Header (counter + clear) ---- */
+.search-box-wrapper {
+  width: 100%;
+}
+
+.search-box-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.symptom-counter {
+  font-size: 0.8rem;
+  color: #718096;
+  font-weight: 500;
+}
+
+.clear-all-btn {
+  font-size: 0.78rem;
+  color: #e53e3e;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  height: auto;
+  transition: background 0.15s;
+}
+
+.clear-all-btn:hover {
+  background: #fff5f5;
+}
+
+/* ---- Result Action Buttons ---- */
+.result-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+  height: auto;
+  min-width: 120px;
+}
+
+.action-btn:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+.ai-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+}
+
+.reset-btn {
+  background: #edf2f7;
+  color: #4a5568;
+}
+
+/* ---- Dark Mode for new elements ---- */
+.app-container.dark .how-it-works .step { color: #a0aec0; }
+.app-container.dark .step-arrow { color: #4a5568; }
+.app-container.dark .emergency-banner { background: #2d1a1a; border-color: #c53030; }
+.app-container.dark .emergency-banner strong { color: #fc8181; }
+.app-container.dark .emergency-banner p { color: #feb2b2; }
+.app-container.dark .quick-label { color: #718096; }
+.app-container.dark .quick-chip { border-color: #4a5568; color: #cbd5e0; background: transparent; }
+.app-container.dark .quick-chip:hover:not(:disabled) { border-color: #667eea; color: #a3bffa; background: #1a2a4a; }
+.app-container.dark .symptom-counter { color: #718096; }
+.app-container.dark .clear-all-btn { color: #fc8181; }
+.app-container.dark .clear-all-btn:hover { background: #2d1a1a; }
+.app-container.dark .reset-btn { background: #4a5568; color: #e2e8f0; }
 
 /* ---- Dark Mode Toggle ---- */
 .dark-mode-toggle {

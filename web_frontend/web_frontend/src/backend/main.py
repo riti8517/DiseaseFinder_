@@ -1,9 +1,12 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from langchain_ollama import OllamaLLM
 from langchain_core.prompts import ChatPromptTemplate
 import pandas as pd
+import numpy as np
+import pickle
+import os
 
 # ---------- Load CSV safely ----------
 try:
@@ -59,6 +62,18 @@ Knowledge:
 User: {question}
 
 Name the most likely disease and briefly explain. If unsure, suggest seeing a doctor."""
+
+# ---------- Load ML model ----------
+MODEL_PATH = "/home/titi/workingdir3/DiseaseFinder_/model_serving/diseaseFinder_neural_network_2025.pkl"
+MODEL_FEATURES = 131  # model was trained on 131 features
+
+try:
+    with open(MODEL_PATH, "rb") as f:
+        _classifier = pickle.load(f)
+    print("✅ ML model loaded successfully!")
+except Exception as e:
+    print("❌ ML model load failed:", e)
+    _classifier = None
 
 # ---------- LLM Setup ----------
 try:
@@ -116,6 +131,30 @@ def chat(req: ChatRequest):
         import traceback
         traceback.print_exc()
         return {"answer": f"Sorry, something went wrong: {str(e)}"}
+
+
+# ---------- Predict endpoint (called by Java backend) ----------
+@app.get("/predict")
+def predict_disease(data: str = Query(...)):
+    if not _classifier:
+        return {"error": "Model not loaded"}
+    try:
+        int_arr = [int(x) for x in data.split(",")]
+        # Pad or truncate to match model's expected feature count
+        if len(int_arr) < MODEL_FEATURES:
+            int_arr += [0] * (MODEL_FEATURES - len(int_arr))
+        else:
+            int_arr = int_arr[:MODEL_FEATURES]
+        column_names = [f"Symptom_{i+1}" for i in range(MODEL_FEATURES)]
+        df_input = pd.DataFrame([int_arr], columns=column_names)
+        prediction = _classifier.predict(df_input)
+        predicted_class = int(np.argmax(np.array(prediction)))
+        print(f"🔮 Prediction: class {predicted_class}")
+        return {"prediction": [predicted_class]}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"error": str(e)}
 
 
 # ---------- Fine-tuning Integration (optional) ----------

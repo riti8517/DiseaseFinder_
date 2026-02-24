@@ -40,10 +40,38 @@ const diseaseInfo = {
 
 const getDefaultDiseaseInfo = (diseaseName) => ({
   severity: "Consult Doctor",
-  description: `${diseaseName} - Please consult a healthcare provider for detailed information about this condition.`,
+  description: `${diseaseName} — Please consult a healthcare provider for detailed information about this condition.`,
   treatments: ["Consult a healthcare provider for proper treatment"],
   duration: "Varies"
 });
+
+// Quick-select common symptoms — names must exactly match the Java backend's CacheManager
+const QUICK_SYMPTOMS = [
+  { id: "q1",  symptom: "high fever" },
+  { id: "q2",  symptom: "headache" },
+  { id: "q3",  symptom: "cough" },
+  { id: "q4",  symptom: "fatigue" },
+  { id: "q5",  symptom: "nausea" },
+  { id: "q6",  symptom: "vomiting" },
+  { id: "q7",  symptom: "diarrhoea" },
+  { id: "q8",  symptom: "throat irritation" },
+  { id: "q9",  symptom: "runny nose" },
+  { id: "q10", symptom: "muscle pain" },
+  { id: "q11", symptom: "dizziness" },
+  { id: "q12", symptom: "chest pain" },
+];
+
+// Emergency symptom combinations that warrant urgent care
+const EMERGENCY_KEYWORDS = [
+  "chest pain",
+  "difficulty breathing",
+  "shortness of breath",
+  "sudden numbness",
+  "severe headache",
+  "loss of consciousness",
+  "coughing blood",
+  "high fever",
+];
 
 export default function App() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -53,33 +81,34 @@ export default function App() {
   const [activeSuggestion, setActiveSuggestion] = useState(0);
   const [predictedDisease, setPredictedDisease] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [darkMode, setDarkMode] = useState(() => {
-    return localStorage.getItem("darkMode") === "true";
-  });
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem("darkMode") === "true");
+  const [isEmergency, setIsEmergency] = useState(false);
+  const [chatTrigger, setChatTrigger] = useState(null);
 
   const inputRef = useRef(null);
-  const currentUrl = new URL(window.location.href);
 
-  // Apply dark mode class to body
+  // Apply dark mode to body
   useEffect(() => {
     document.body.classList.toggle("dark-mode", darkMode);
     localStorage.setItem("darkMode", darkMode);
   }, [darkMode]);
 
+  // Detect emergency symptoms
   useEffect(() => {
-    if (!searchTerm.trim()) {
-      setSuggestions([]);
-      return;
-    }
+    const names = selectedSymptoms.map((s) => s.symptom.toLowerCase());
+    const found = names.some((n) => EMERGENCY_KEYWORDS.some((k) => n.includes(k)));
+    setIsEmergency(found);
+  }, [selectedSymptoms]);
 
-    const apiUrl = `http://${currentUrl.hostname}:8080/symptoms`;
-
-    fetch(apiUrl)
+  // Autocomplete fetch
+  useEffect(() => {
+    if (!searchTerm.trim()) { setSuggestions([]); return; }
+    fetch("/symptoms")
       .then((res) => res.json())
       .then((data) => {
-        const filtered = data.filter((s) =>
-          s.symptom.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+        const filtered = data
+          .filter((s) => s.symptom.toLowerCase().includes(searchTerm.toLowerCase()))
+          .map((s, i) => ({ ...s, id: `api-${i}-${s.symptom}` }));
         setActiveSuggestion(0);
         setSuggestions(filtered);
       })
@@ -87,22 +116,29 @@ export default function App() {
   }, [searchTerm]);
 
   const handleSelectSymptom = (symptom) => {
+    if (selectedSymptomSet.has(symptom.symptom)) return;
     setSelectedSymptoms((prev) => [...prev, symptom]);
     setSelectedSymptomSet((prev) => new Set([...prev, symptom.symptom]));
     setSearchTerm("");
     setSuggestions([]);
-    inputRef.current.focus();
+    inputRef.current?.focus();
   };
 
   const handleRemoveSymptom = (symptom) => {
-    setSelectedSymptoms((prev) =>
-      prev.filter((s) => s.id !== symptom.id)
-    );
+    setSelectedSymptoms((prev) => prev.filter((s) => s.symptom !== symptom.symptom));
     setSelectedSymptomSet((prev) => {
       const copy = new Set(prev);
       copy.delete(symptom.symptom);
       return copy;
     });
+  };
+
+  const handleClearAll = () => {
+    setSelectedSymptoms([]);
+    setSelectedSymptomSet(new Set());
+    setPredictedDisease("");
+    setIsEmergency(false);
+    inputRef.current?.focus();
   };
 
   const handleKeyDown = (e) => {
@@ -122,38 +158,29 @@ export default function App() {
 
   const handleSearchDisease = () => {
     const symptomNames = selectedSymptoms.map((s) => s.symptom).join(",");
-    const url = `http://${currentUrl.hostname}:8080/predictDisease?symptoms=${encodeURIComponent(
-      symptomNames
-    )}`;
-
+    const url = `/predictDisease?symptoms=${encodeURIComponent(symptomNames)}`;
     setIsLoading(true);
     setPredictedDisease("");
-
     fetch(url)
       .then((res) => res.json())
-      .then((data) => {
-        setPredictedDisease(data.data);
-        setIsLoading(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setIsLoading(false);
-      });
+      .then((data) => { setPredictedDisease(data.data); setIsLoading(false); })
+      .catch((err) => { console.error(err); setIsLoading(false); });
   };
 
-  const getDiseaseDetails = (disease) => {
-    return diseaseInfo[disease] || getDefaultDiseaseInfo(disease);
+  const handleDiscussWithAI = () => {
+    const symptomList = selectedSymptoms.map((s) => s.symptom).join(", ");
+    const message = `I was predicted to have "${predictedDisease}" based on these symptoms: ${symptomList}. Can you explain this condition, what causes it, and what I should do next?`;
+    setChatTrigger(message);
   };
 
-  const getSeverityColor = (severity) => {
-    const colors = {
-      "Mild": "#48bb78",
-      "Moderate": "#ed8936",
-      "Chronic": "#e53e3e",
-      "Consult Doctor": "#667eea"
-    };
-    return colors[severity] || "#667eea";
-  };
+  const getDiseaseDetails = (disease) => diseaseInfo[disease] || getDefaultDiseaseInfo(disease);
+
+  const getSeverityColor = (severity) => ({
+    "Mild": "#48bb78",
+    "Moderate": "#ed8936",
+    "Chronic": "#e53e3e",
+    "Consult Doctor": "#667eea"
+  }[severity] || "#667eea");
 
   return (
     <>
@@ -173,43 +200,89 @@ export default function App() {
           </p>
         </header>
 
+        {/* How it works */}
+        <div className="how-it-works">
+          <div className="step"><span className="step-num">1</span><span>Select your symptoms</span></div>
+          <div className="step-arrow">→</div>
+          <div className="step"><span className="step-num">2</span><span>Click predict</span></div>
+          <div className="step-arrow">→</div>
+          <div className="step"><span className="step-num">3</span><span>Get results & AI advice</span></div>
+        </div>
+
         <main className="app-main">
+          {/* Emergency Banner */}
+          {isEmergency && (
+            <div className="emergency-banner">
+              <span className="emergency-icon">🚨</span>
+              <div>
+                <strong>Seek Emergency Care Immediately</strong>
+                <p>One or more of your symptoms may require urgent medical attention. Please call emergency services or go to the nearest emergency room.</p>
+              </div>
+            </div>
+          )}
+
           <div className="search-section">
-            <div className="search-box">
-              <div className="pills-container">
-                {selectedSymptoms.map((s) => (
-                  <Pill
+            {/* Quick symptom chips */}
+            <div className="quick-symptoms-section">
+              <p className="quick-label">Common symptoms — click to add:</p>
+              <div className="quick-chips">
+                {QUICK_SYMPTOMS.map((s) => (
+                  <button
                     key={s.id}
-                    text={s.symptom}
-                    onClick={() => handleRemoveSymptom(s)}
-                  />
+                    className={`quick-chip ${selectedSymptomSet.has(s.symptom) ? "selected" : ""}`}
+                    onClick={() => handleSelectSymptom(s)}
+                    disabled={selectedSymptomSet.has(s.symptom)}
+                  >
+                    {s.symptom}
+                  </button>
                 ))}
               </div>
+            </div>
 
-              <input
-                ref={inputRef}
-                className="search-input"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Type a symptom (e.g. headache, fever)..."
-                onKeyDown={handleKeyDown}
-              />
+            <div className="search-box-wrapper">
+              <div className="search-box-header">
+                <span className="symptom-counter">
+                  {selectedSymptoms.length > 0
+                    ? `${selectedSymptoms.length} symptom${selectedSymptoms.length > 1 ? "s" : ""} selected`
+                    : "No symptoms selected"}
+                </span>
+                {selectedSymptoms.length > 0 && (
+                  <button className="clear-all-btn" onClick={handleClearAll}>
+                    Clear all
+                  </button>
+                )}
+              </div>
 
-              {searchTerm && suggestions.length > 0 && (
-                <ul className="suggestions-list">
-                  {suggestions.map((symptom, idx) =>
-                    !selectedSymptomSet.has(symptom.symptom) ? (
-                      <li
-                        key={symptom.id}
-                        className={idx === activeSuggestion ? "active" : ""}
-                        onClick={() => handleSelectSymptom(symptom)}
-                      >
-                        {symptom.symptom}
-                      </li>
-                    ) : null
-                  )}
-                </ul>
-              )}
+              <div className="search-box">
+                <div className="pills-container">
+                  {selectedSymptoms.map((s) => (
+                    <Pill key={s.id} text={s.symptom} onClick={() => handleRemoveSymptom(s)} />
+                  ))}
+                </div>
+                <input
+                  ref={inputRef}
+                  className="search-input"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Type a symptom (e.g. headache, fever)..."
+                  onKeyDown={handleKeyDown}
+                />
+                {searchTerm && suggestions.length > 0 && (
+                  <ul className="suggestions-list">
+                    {suggestions.map((symptom, idx) =>
+                      !selectedSymptomSet.has(symptom.symptom) ? (
+                        <li
+                          key={symptom.id}
+                          className={idx === activeSuggestion ? "active" : ""}
+                          onClick={() => handleSelectSymptom(symptom)}
+                        >
+                          {symptom.symptom}
+                        </li>
+                      ) : null
+                    )}
+                  </ul>
+                )}
+              </div>
             </div>
 
             <button
@@ -217,20 +290,15 @@ export default function App() {
               onClick={handleSearchDisease}
               disabled={selectedSymptoms.length === 0 || isLoading}
             >
-              {isLoading ? (
-                <span className="loading-spinner"></span>
-              ) : (
-                "Find Possible Disease"
-              )}
+              {isLoading ? <span className="loading-spinner"></span> : "Find Possible Disease"}
             </button>
 
             {selectedSymptoms.length === 0 && (
-              <p className="hint-text">
-                Start typing to search and select your symptoms
-              </p>
+              <p className="hint-text">Start typing or click a common symptom above</p>
             )}
           </div>
 
+          {/* Result card */}
           {predictedDisease && (
             <div className="result-card">
               <div className="result-card-header">Prediction Result</div>
@@ -245,15 +313,13 @@ export default function App() {
                   </span>
                 </div>
 
-                <p className="disease-description">
-                  {getDiseaseDetails(predictedDisease).description}
-                </p>
+                <p className="disease-description">{getDiseaseDetails(predictedDisease).description}</p>
 
                 <div className="disease-info-section">
                   <h4>Common Treatments</h4>
                   <ul className="treatment-list">
-                    {getDiseaseDetails(predictedDisease).treatments.map((treatment, idx) => (
-                      <li key={idx}>{treatment}</li>
+                    {getDiseaseDetails(predictedDisease).treatments.map((t, i) => (
+                      <li key={i}>{t}</li>
                     ))}
                   </ul>
                 </div>
@@ -261,6 +327,16 @@ export default function App() {
                 <div className="disease-info-section">
                   <h4>Typical Duration</h4>
                   <p>{getDiseaseDetails(predictedDisease).duration}</p>
+                </div>
+
+                {/* Action buttons */}
+                <div className="result-actions">
+                  <button className="action-btn ai-btn" onClick={handleDiscussWithAI}>
+                    💬 Discuss with AI
+                  </button>
+                  <button className="action-btn reset-btn" onClick={handleClearAll}>
+                    🔄 Start over
+                  </button>
                 </div>
 
                 <p className="disease-disclaimer">
@@ -276,7 +352,7 @@ export default function App() {
         </footer>
       </div>
 
-      <Chatbot />
+      <Chatbot triggerMessage={chatTrigger} onTriggerHandled={() => setChatTrigger(null)} />
     </>
   );
 }
