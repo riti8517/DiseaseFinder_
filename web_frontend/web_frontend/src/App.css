@@ -439,9 +439,6 @@ body {
 
 /* ---- Dark Mode Toggle ---- */
 .dark-mode-toggle {
-  position: absolute;
-  top: 16px;
-  right: 16px;
   width: 40px;
   height: 40px;
   border: none;
@@ -453,6 +450,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .dark-mode-toggle:hover {
@@ -648,6 +646,380 @@ body.dark-mode {
 
 .app-container.dark .dark-mode-toggle:hover {
   background: #5a6578;
+}
+
+/* ======================================
+   LANDING PAGE
+   ====================================== */
+.landing-container {
+  max-width: 700px;
+}
+
+.landing-header {
+  margin-bottom: 8px;
+}
+
+.landing-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 8px 0 16px;
+}
+
+.landing-question {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #4a5568;
+  text-align: center;
+  margin: 0;
+}
+
+.landing-cards {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+}
+
+.landing-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 28px 20px;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  text-align: center;
+  height: auto;
+}
+
+.landing-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
+}
+
+.physical-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+}
+
+.mental-card {
+  background: linear-gradient(135deg, #38b2ac 0%, #2c7a7b 100%);
+  color: #fff;
+}
+
+.landing-card-icon {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.landing-card-content h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: #fff;
+}
+
+.landing-card-content p {
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.88);
+  margin: 0 0 14px;
+  line-height: 1.5;
+}
+
+.landing-card-cta {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 20px;
+  padding: 6px 16px;
+  display: inline-block;
+}
+
+.landing-disclaimer {
+  font-size: 0.8rem;
+  color: #a0aec0;
+  text-align: center;
+  margin: 0;
+}
+
+/* ======================================
+   TOP BAR (back button + dark mode)
+   ====================================== */
+.mh-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.back-btn {
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  color: #667eea;
+  cursor: pointer;
+  font-weight: 500;
+  height: auto;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.back-btn:hover {
+  background: #f0f4ff;
+  border-color: #667eea;
+}
+
+/* ======================================
+   MENTAL HEALTH PAGE
+   ====================================== */
+.mental-container {
+  max-width: 680px;
+}
+
+.mh-header-icon {
+  font-size: 3.5rem;
+  margin-bottom: 12px;
+}
+
+.mh-section {
+  margin-bottom: 32px;
+  width: 100%;
+}
+
+.mh-section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #4a5568;
+  margin-bottom: 14px;
+}
+
+.emergency-title {
+  color: #c53030;
+}
+
+/* Mood grid */
+.mood-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.mood-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 8px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f7fafc;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+  height: auto;
+}
+
+.mood-btn:hover {
+  border-color: #38b2ac;
+  background: #e6fffa;
+  transform: translateY(-2px);
+}
+
+.mood-btn.selected {
+  border-color: #38b2ac;
+  background: #e6fffa;
+}
+
+.mood-emoji {
+  font-size: 1.8rem;
+}
+
+.mood-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+/* Topics grid */
+.topics-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.topic-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f7fafc;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+  height: auto;
+}
+
+.topic-card:hover {
+  border-color: #38b2ac;
+  background: #e6fffa;
+  transform: translateX(4px);
+}
+
+.topic-card.selected {
+  border-color: #38b2ac;
+  background: #e6fffa;
+}
+
+.topic-icon {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+}
+
+.topic-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.topic-text strong {
+  font-size: 0.95rem;
+  color: #2d3748;
+}
+
+.topic-text small {
+  font-size: 0.8rem;
+  color: #718096;
+}
+
+/* Resources */
+.mh-resources {
+  background: #fff5f5;
+  border: 1px solid #feb2b2;
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+
+.resources-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.resource-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #fed7d7;
+}
+
+.resource-icon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.resource-card strong {
+  font-size: 0.88rem;
+  color: #c53030;
+  display: block;
+}
+
+.resource-card p {
+  font-size: 0.82rem;
+  color: #718096;
+  margin: 0;
+}
+
+/* ======================================
+   DARK MODE — landing & mental health
+   ====================================== */
+.app-container.dark .landing-question {
+  color: #e2e8f0;
+}
+
+.app-container.dark .landing-disclaimer {
+  color: #718096;
+}
+
+.app-container.dark .back-btn {
+  border-color: #4a5568;
+  color: #90cdf4;
+}
+
+.app-container.dark .back-btn:hover {
+  background: #2d3748;
+  border-color: #90cdf4;
+}
+
+.app-container.dark .mh-section-title {
+  color: #e2e8f0;
+}
+
+.app-container.dark .mood-btn {
+  background: #2d3748;
+  border-color: #4a5568;
+}
+
+.app-container.dark .mood-btn:hover,
+.app-container.dark .mood-btn.selected {
+  background: #234e52;
+  border-color: #38b2ac;
+}
+
+.app-container.dark .mood-label {
+  color: #e2e8f0;
+}
+
+.app-container.dark .topic-card {
+  background: #2d3748;
+  border-color: #4a5568;
+}
+
+.app-container.dark .topic-card:hover,
+.app-container.dark .topic-card.selected {
+  background: #234e52;
+  border-color: #38b2ac;
+}
+
+.app-container.dark .topic-text strong {
+  color: #e2e8f0;
+}
+
+.app-container.dark .topic-text small {
+  color: #a0aec0;
+}
+
+.app-container.dark .mh-resources {
+  background: #2d2020;
+  border-color: #742a2a;
+}
+
+.app-container.dark .resource-card {
+  background: #1a202c;
+  border-color: #742a2a;
+}
+
+.app-container.dark .resource-card p {
+  color: #a0aec0;
+}
+
+@media (max-width: 560px) {
+  .landing-cards {
+    flex-direction: column;
+  }
+
+  .mood-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 /* ---- Responsive ---- */

@@ -73,7 +73,7 @@ const EMERGENCY_KEYWORDS = [
   "high fever",
 ];
 
-export default function App() {
+export default function App({ onBack }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [selectedSymptoms, setSelectedSymptoms] = useState([]);
@@ -185,7 +185,8 @@ export default function App() {
   return (
     <>
       <div className={`app-container ${darkMode ? "dark" : ""}`}>
-        <header className="app-header">
+        <div className="mh-top-bar">
+          {onBack && <button className="back-btn" onClick={onBack}>← Back</button>}
           <button
             className="dark-mode-toggle"
             onClick={() => setDarkMode(!darkMode)}
@@ -193,6 +194,8 @@ export default function App() {
           >
             {darkMode ? "☀️" : "🌙"}
           </button>
+        </div>
+        <header className="app-header">
           <img src={docImage} alt="Disease Finder" className="app-logo" />
           <h1 className="app-title">Disease Finder</h1>
           <p className="app-subtitle">
