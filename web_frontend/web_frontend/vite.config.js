@@ -6,6 +6,7 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
+    allowedHosts: ['mysymptoms.info', 'www.mysymptoms.info'],
     proxy: {
       '/chat': {
         target: 'http://localhost:8000',

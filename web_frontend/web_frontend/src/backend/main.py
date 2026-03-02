@@ -1,12 +1,11 @@
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from langchain_ollama import OllamaLLM
-from langchain_core.prompts import ChatPromptTemplate
 import pandas as pd
 import numpy as np
 import pickle
 import os
+from groq import Groq
 
 # ---------- Load CSV safely ----------
 try:
@@ -54,17 +53,23 @@ def get_relevant_context(question: str) -> str:
     return limit_context("\n".join(relevant))
 
 # ---------- LLM template ----------
-TEMPLATE = """You are a medical assistant. Answer in 2-3 sentences max.
-
-Knowledge:
-{context}
-
-User: {question}
-
-Name the most likely disease and briefly explain. If unsure, suggest seeing a doctor."""
+SYSTEM_PROMPT = "You are a medical assistant. Answer in 2-3 sentences max. Name the most likely disease and briefly explain. If unsure, suggest seeing a doctor."
 
 # ---------- Load ML model ----------
-MODEL_PATH = "/home/titi/workingdir3/DiseaseFinder_/model_serving/diseaseFinder_neural_network_2025.pkl"
+# Support both local dev path and EC2 path
+_LOCAL_MODEL_PATH = "/home/titi/workingdir3/DiseaseFinder_/model_serving/diseaseFinder_neural_network_2025.pkl"
+_EC2_MODEL_PATH = "/home/ubuntu/DiseaseFinder_/model_serving/diseaseFinder_neural_network_2025.pkl"
+_ENV_MODEL_PATH = os.environ.get("MODEL_PATH", "")
+
+if _ENV_MODEL_PATH and os.path.exists(_ENV_MODEL_PATH):
+    MODEL_PATH = _ENV_MODEL_PATH
+elif os.path.exists(_LOCAL_MODEL_PATH):
+    MODEL_PATH = _LOCAL_MODEL_PATH
+elif os.path.exists(_EC2_MODEL_PATH):
+    MODEL_PATH = _EC2_MODEL_PATH
+else:
+    MODEL_PATH = _LOCAL_MODEL_PATH  # will fail gracefully below
+
 MODEL_FEATURES = 131  # model was trained on 131 features
 
 try:
@@ -75,16 +80,16 @@ except Exception as e:
     print("❌ ML model load failed:", e)
     _classifier = None
 
-# ---------- LLM Setup ----------
+# ---------- Groq LLM Setup ----------
+_groq_client = None
 try:
-    # Change model name if you fine-tune later, e.g. "medical-assistant"
-    _llm = OllamaLLM(model="llama3", num_predict=150)
-    _prompt = ChatPromptTemplate.from_template(TEMPLATE)
-    _chain = _prompt | _llm
-    print("✅ LLM model loaded successfully!")
+    _api_key = os.environ.get("GROQ_API_KEY", "")
+    if not _api_key:
+        raise ValueError("GROQ_API_KEY environment variable not set")
+    _groq_client = Groq(api_key=_api_key)
+    print("✅ Groq client initialized successfully!")
 except Exception as e:
-    print("❌ LLM setup failed:", e)
-    _chain = None
+    print("❌ Groq setup failed:", e)
 
 # ---------- FastAPI setup ----------
 app = FastAPI()
@@ -111,18 +116,24 @@ def chat(req: ChatRequest):
     user_text = req.question
     print("🗣️ User:", user_text)
 
-    # Check model
-    if not _chain:
-        return {"answer": "Error: LLM model not available."}
+    if not _groq_client:
+        return {"answer": "Error: LLM model not available. Please set GROQ_API_KEY."}
 
     try:
-        # Build relevant context dynamically
         context_text = get_relevant_context(user_text)
         print(f"📘 Context size: {len(context_text.split())} words")
 
-        # Query model
-        raw_answer = _chain.invoke({"context": context_text, "question": user_text})
-        answer = str(raw_answer).strip()
+        user_message = f"Knowledge:\n{context_text}\n\nUser: {user_text}"
+
+        response = _groq_client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user_message},
+            ],
+            max_tokens=150,
+        )
+        answer = response.choices[0].message.content.strip()
 
         print("🤖 Answer:", answer)
         return {"answer": answer}
@@ -155,24 +166,3 @@ def predict_disease(data: str = Query(...)):
         import traceback
         traceback.print_exc()
         return {"error": str(e)}
-
-
-# ---------- Fine-tuning Integration (optional) ----------
-"""
-💡 Fine-tuning Steps (for later):
-
-1. Collect training examples in JSONL:
-   {"prompt": "Symptoms: fever, cough", "response": "Likely flu or COVID."}
-
-2. Fine-tune your model using Ollama or OpenAI API.
-   For Ollama:
-     - Create a Modelfile with:
-         FROM llama3
-         PARAMETER temperature 0.7
-         TEMPLATE "You are a concise medical assistant..."
-     - Then run:
-         ollama create medical-assistant -f Modelfile
-
-3. Update this line to use your fine-tuned model:
-     _llm = OllamaLLM(model="medical-assistant")
-"""

@@ -3,14 +3,15 @@
 pkill -f "vite" 2>/dev/null
 pkill -f "uvicorn" 2>/dev/null
 pkill -f "docker-java-app" 2>/dev/null
+pkill -f "cloudflared" 2>/dev/null
 pkill -f "ngrok" 2>/dev/null
 sleep 2
 
-# Re-download ngrok if missing
-if [ ! -f /tmp/ngrok ]; then
-  echo "Downloading ngrok..."
-  curl -sL https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz -o /tmp/ngrok.tgz
-  tar -xzf /tmp/ngrok.tgz -C /tmp
+# Re-download cloudflared if missing from /tmp
+if [ ! -f /tmp/cloudflared ]; then
+  echo "Downloading cloudflared..."
+  curl -sL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /tmp/cloudflared
+  chmod +x /tmp/cloudflared
 fi
 
 # Start servers
@@ -28,15 +29,19 @@ npx vite --host 0.0.0.0 --port 5173 > /tmp/vite.log 2>&1 &
 echo "Waiting for servers to start..."
 sleep 6
 
-# Start ngrok
-echo "Starting ngrok tunnel..."
-/tmp/ngrok http 5173 > /tmp/ngrok.log 2>&1 &
-sleep 6
+# Start Cloudflare tunnel (for mysymptoms.info)
+echo "Starting Cloudflare tunnel for mysymptoms.info..."
+nohup /tmp/cloudflared tunnel --config /home/titi/.cloudflared/config.yml run mysymptoms > /tmp/cf-tunnel.log 2>&1 &
+sleep 5
 
-# Print the public URL
-echo ""
-echo "==============================="
-PUBLIC_URL=$(curl -s http://localhost:4040/api/tunnels | python3 -c "import json,sys; d=json.load(sys.stdin); print([t['public_url'] for t in d['tunnels'] if 'https' in t['public_url']][0])" 2>/dev/null)
-echo "PUBLIC URL: $PUBLIC_URL"
-echo "==============================="
-echo "Share this link with anyone!"
+# Check if tunnel connected
+if grep -q "Registered tunnel connection" /tmp/cf-tunnel.log 2>/dev/null; then
+  echo ""
+  echo "==============================="
+  echo "LIVE AT: https://mysymptoms.info"
+  echo "==============================="
+else
+  echo ""
+  echo "WARNING: Cloudflare tunnel failed to connect."
+  echo "Try again or check logs: cat /tmp/cf-tunnel.log"
+fi
